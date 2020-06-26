@@ -47,11 +47,15 @@ def save_pvdata_to_h5(pv_list, h5group):
     """Save pvdata at specifc python isotime to h5 file"""
     timestamp = h5group['image'].attrs['isotime']
     pv_group  = h5group.create_group('pvdata')
-
     pv_names  = []
     for pv_name in pv_list:
+        # Using wildcard to get all related PV names w/ meme
         pv_names  = pv_names + meme.names.list_pvs(pv_name)
-    pv_values = meme.archive.get(pv_names, from_time=timestamp, to_time=timestamp)
+   
+    # Converting isotime to datetime for meme 
+    time      = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
+    delta     = time + timedelta(days=0, milliseconds=1)
+    pv_values = meme.archive.get(pv_names, from_time=time, to_time=delta)
     for entry in pv_values:
         label = entry['pvName']
         value = entry['value']['value']['values']
