@@ -104,6 +104,7 @@ class CorPlotMatScan(object):
     @property
     def timestamp(self):
         """Matlab timestamp (ordinal)"""
+        import pdb; pdb.set_trace()
         return self._ts
 
     @property
@@ -209,15 +210,16 @@ class CorPlotMatScan(object):
         names = prof.dtype.names
         prof_pvs = dict()
         for pv in prof:
-            if isinstance(pv[0][0][0], unicode):  # one sample
-                prof_pvs[str(pv[0][0][0])] = pv
-            else:  # Multiple samples
-                prof_pvs[str(pv[0][0][0][0])] = pv  
-
+            #if isinstance(pv[0][0][0], unicode):  # one sample
+            #    prof_pvs[str(pv[0][0][0])] = pv
+            #else:  # Multiple samples
+            #    prof_pvs[str(pv[0][0][0][0])] = pv  
+            prof_pvs[str(pv[0][0][0])] = pv
         return prof_pvs
 
     def _unpack_ts(self, data):
         """Unpack the timestamp, datetime.fromordinal not in current version"""
+        import pdb; pdb.set_trace()
         if TS not in self._fields:
             return None
 
