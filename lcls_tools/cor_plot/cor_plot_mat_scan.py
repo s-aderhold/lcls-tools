@@ -104,7 +104,6 @@ class CorPlotMatScan(object):
     @property
     def timestamp(self):
         """Matlab timestamp (ordinal)"""
-        import pdb; pdb.set_trace()
         return self._ts
 
     @property
@@ -219,7 +218,6 @@ class CorPlotMatScan(object):
 
     def _unpack_ts(self, data):
         """Unpack the timestamp, datetime.fromordinal not in current version"""
-        import pdb; pdb.set_trace()
         if TS not in self._fields:
             return None
 
