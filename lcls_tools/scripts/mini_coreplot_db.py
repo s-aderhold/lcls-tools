@@ -19,6 +19,7 @@ cpms      = CPMS(date+dtype)
 ctrlpv    = cpms.ctrl_pv
 solvals   = cpms.ctrl_vals
 matstamp  = cpms.timestamp
+beam_data = cpms.beam
 
 # Injector PV keys
 pv_names = ['IRIS:LR20:%','%:IN20:%:BACT','ACCL:IN20:*00:L0%','SIOC:SYS0:ML01:CALCOUT008']
@@ -26,14 +27,31 @@ pv_names = ['IRIS:LR20:%','%:IN20:%:BACT','ACCL:IN20:*00:L0%','SIOC:SYS0:ML01:CA
 # Make h5 file, give data description
 cp_h5 = h5py.File('corplot_test.h5', 'w')
 cp_h5.attrs['information'] = 'cu inj pvs and data for solenoid scan on YAG02'
-cp_group = cp_h5.create_group('test')
+cp_group = cp_h5.create_group('YAG02')
 
 # Convert matlab time to isotime
 timestamp = datenum_to_datetime(matstamp)
 isotime   = get_iso_time(timestamp)
+cp_group.attrs['isotime'] = isotime
 
 # Save pv data given time stamp
 save_pvdata_to_h5(pv_names,cp_group, isotime)
 
+# Save beam data and magnet strengths
+beam = cp_group.create_group('beam_data')
+beam.create_dataset('magnet_strengths', data = solvals)
 
+fits = ['Gaussian', 'Asymmetric', 'Super', 'RMS', 'RMS cut peak', 'RMS cut area', 'RMS floor']
 
+for i in range(len(solvals)):
+    step_data  = beam_data[i]
+    step_group = beam.create_group('solval='+str(solvals(i)))
+    #import pdb; pdb.set_trace()
+
+    for n in range(len(step_data)):
+        sample = step_group.create_group('sample'+str(n))
+        for j, fit in enumerate(fits):
+            sample.create_dataset(fit+'_xStat', data = step_data[n][j]['xStat'])
+            sample.create_dataset(fit+'_yStat', data = step_data[n][j]['yStat'])
+
+cp_h5.close()
