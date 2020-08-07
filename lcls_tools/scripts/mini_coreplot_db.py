@@ -22,7 +22,7 @@ matstamp  = cpms.timestamp
 beam_data = cpms.beam
 
 # Injector PV keys
-pv_names = ['IRIS:LR20:%','%:IN20:%:BACT','ACCL:IN20:*00:L0%','SIOC:SYS0:ML01:CALCOUT008']
+pv_names = ['IRIS:LR20:%','%:IN20:%:BACT','ACCL:IN20:300:L0A_PDES','ACCL:IN20:400:L0B_PDES', 'SIOC:SYS0:ML01:CALCOUT008']
 
 # Make h5 file, give data description
 cp_h5 = h5py.File('corplot_test.h5', 'w')
@@ -45,7 +45,7 @@ fits = ['Gaussian', 'Asymmetric', 'Super', 'RMS', 'RMS cut peak', 'RMS cut area'
 
 for i in range(len(solvals)):
     step_data  = beam_data[i]
-    step_group = beam.create_group('solval='+str(solvals(i)))
+    step_group = beam.create_group('solval='+str(solvals[i]))
     #import pdb; pdb.set_trace()
 
     for n in range(len(step_data)):
