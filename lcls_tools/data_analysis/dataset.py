@@ -9,6 +9,16 @@ FITS = ['Gaussian', 'Asymmetric', 'Super', 'RMS', 'RMS cut peak', 'RMS cut area'
 #    def __init__(self):
 #        try 
 
+LCLS_YAG_MAP = {
+        'YAG02':'YAGS:IN20:241', 
+        'YAG03':'YAGS:IN20:351', 
+        'YAGS2':'YAGS:IN20:995',
+        'OTR1':'OTRS:IN20:541',
+        'OTR2':'OTRS:IN20:571',
+        'OTR3':'OTRS:IN20:621',
+        }
+
+
 def check_emitscan_load(filename):
     """Load emit scan data"""
     mes      = MES(filename)
@@ -30,6 +40,9 @@ def check_corplot_load(filename):
     nsamples  = cpms.samples     #n samples per magnet setting
     nsteps    = cpms.iterations  #number of magnet settings
     pvunits   = cpms.control_dict[0]['egu'] #units for sol strength
+    profpv    = cpms.prof_pv
+    assert cpms.beam_names is not None
+    assert cpms.prof_pv is not None
     return cpms.timestamp
 
 
@@ -88,28 +101,38 @@ def save_corplot_solenoid_scan(filename, h5group):
     #Make sure only one SOLN ctrl pv:
     assert isinstance(cpms.ctrl_pv, str) 
     assert 'SOLN' in cpms.ctrl_pv
-    assert cpms.beam_names is not None
 
+    
+    #import pdb; pdb.set_trace()
+    pydatetime = datenum_to_datetime(cpms.timestamp)
+    isotime    = pydatetime.isoformat()+'-07:00'
+    short_time = isotime.split('.')[0]
+    if len(cpms.prof_pv) > 1:
+        name = cpms.prof_pv[0]
+    else:
+        name = cpms._prof_pv[cpms.prof_pv[0]][0][0][0] #AHHHH
+   
+    for yag, yag_pv in LCLS_YAG_MAP.items():
+        if yag_pv in name:
+            yag_name = yag
+            print('YAH',yag_name)
+    
+    cp_group   = h5group.create_group('solenoid_scan_'+yag_name+'_'+short_time)
+    beam       = cp_group.create_group('beam_data') 
+            
     # Save some default info on top level
-    try:
-        #import pdb; pdb.set_trace()
-        pydatetime = datenum_to_datetime(cpms.timestamp)
-        isotime    = pydatetime.isoformat()+'-07:00'
-        h5group.attrs['file']         = cpms.file
-        h5group.attrs['isotime']      = isotime   
-        h5group.attrs['accelerator']  = cpms.accelerator
-        h5group.attrs['beam_names']   = cpms.beam_names
-        h5group.attrs['ctrl_pv']      = cpms.ctrl_pv
-        h5group.attrs['ctrl_pv_unit'] = cpms.control_dict[0]['egu']
-        h5group.attrs['matlab_timestamp'] = cpms.timestamp
-    except:
-        print('ERROR: Missing attribute, or unexpected file format')
-        #import pdb; pdb.set_trace()
+    h5group.attrs['file']         = cpms.file
+    h5group.attrs['isotime']      = isotime   
+    h5group.attrs['accelerator']  = cpms.accelerator
+    h5group.attrs['beam_names']   = cpms.beam_names
+    h5group.attrs['ctrl_pv']      = cpms.ctrl_pv
+    h5group.attrs['ctrl_pv_unit'] = cpms.control_dict[0]['egu']
+    h5group.attrs['matlab_timestamp'] = cpms.timestamp
 
     print('Trying to load the following types of data:', cpms.beam_names)
     # Loop through measurment steps
     for i in range(0, cpms.iterations):
-        step_group = h5group.create_group('Step'+str(i))
+        step_group = beam.create_group('Step'+str(i))
         # Save ctrl pv and value, get beam data
         step_group.attrs[cpms.ctrl_pv]        = cpms.ctrl_vals[i]
         step_group.attrs[cpms.ctrl_pv+'.EGU'] = cpms.control_dict[0]['egu'] 
@@ -118,6 +141,7 @@ def save_corplot_solenoid_scan(filename, h5group):
         for sample in range(0,cpms.samples):
             sample_group = step_group.create_group('sample'+str(sample))
             raw_group    = sample_group.create_group('raw_data')
+            raw_group.attrs['unit'] = 'um'
             # Fitting functions used to calc beam sizes
             for ifit, fit in enumerate(FITS):
                 if 'Gaussian' in fit:
@@ -132,18 +156,14 @@ def save_corplot_solenoid_scan(filename, h5group):
               
                 # Create groups to save beam size data
                 fit_group  = sample_group.create_group(fit) 
+                fit_group.attrs['unit'] = 'um'
                 # Different types of beam data
                 for name in cpms.beam_names:
-                   
-                    try:
-                        # Unpacking a stats data
-                        small_data = unpack_mat_beam_data(step_data[sample][ifit][name], name)
-                        for key in small_data:
-                            data_type = name+'_'+key
-                            save_data = fit_group.create_dataset(data_type, data=np.array(small_data[key]))
-                    except:
-                        #print('No data for this key:', key)
-                        pass
+                    # Unpacking a stats data
+                    small_data = unpack_mat_beam_data(step_data[sample][ifit][name], name)
+                    for key in small_data:
+                        data_type = name+'_'+key
+                        save_data = fit_group.create_dataset(data_type, data=np.array(small_data[key]))
     
     return
 

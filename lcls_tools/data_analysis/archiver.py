@@ -72,8 +72,7 @@ def save_pvdata_to_h5(pvlist, h5group, isotime):
         pv_value = meme.archive.get(pv_name, from_time=isotime, to_time=isotime)
         pv_num   = pv_value['values'][0]
 	# save unit and value
-        pv_unit_name = pv_name+'.EGU'
-        pv_group.attrs[pv_name]      = str(pv_num)
-        pv_group.attrs[pv_unit_name] = units
+        pv_group.attrs[pv_name]        = str(pv_num)
+        pv_group.attrs[pv_name+'.EGU'] = units
 
     return None	
