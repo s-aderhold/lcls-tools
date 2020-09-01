@@ -16,6 +16,9 @@ from archiver import *
 from dataset import *
 
 #Correlation plot scan data
+sol1 = glob.glob('/u1/lcls/matlab/data/2020/2020-06/2020-06-*[21,22]/Cor*SOLN*')
+sol2 = glob.glob('/u1/lcls/matlab/data/2020/2020-07/2020-07-*[08,09]/Cor*SOLN*')
+solfiles = sol1 + sol2
 #solfiles  = glob.glob('/mccfs2/u1/lcls/matlab/data/2020/2020-0{6,7}/2020-0{6,7}-{21,22,8,9}/Cor*SOLN*')
 #solfiles = glob.glob('/Users/nneveu/Google Drive File Stream/Shared drives/Injector Modeling/measurements/cu_inj/2020-0*/Cor*SOLN*')
 
@@ -35,16 +38,16 @@ for filename in solfiles:
     try:
         # Check file is ok
         matstamp = check_corplot_load(filename)
-       
+        pydatetime = datenum_to_datetime(matstamp)
+        isotime    = pydatetime.isoformat()+'-07:00' 
         #Save beam data and magnet strengths
         #beam    = cp_group.create_group('beam_data')
-        save_corplot_solenoid_scan(filename, cp_h5)
+        file_group = save_corplot_solenoid_scan(filename, cp_h5)
         
         # Injector PV keys
-        #pv_list = get_pvdata_names(partial_pv)
-        
         # Save pv data given time stamp
-        #save_pvdata_to_h5(pv_list, cp_group, isotime)
+        #import pdb; pdb.set_trace()
+        save_pvdata_to_h5(pv_list, file_group, isotime)
     except:
         print('Unable to save data from:', filename)
 
