@@ -34,13 +34,12 @@ class CorPlotMatScan(object):
             self._accel = self._unpack_accl(data)
             self._statuses = self._unpack_statuses(data)
             self._ctrl_dict = self._unpack_ctrl_pv(data)
-            self._read = self._unpack_read_pv(data)  # [pv][iteration][readings]
+            #self._read = self._unpack_read_pv(data)  # [pv][iteration][readings]
             self._twiss_pv = None  # Don't have file with this yet
             self._twiss_std = None  # Don't have file with this yet
             self._beam, self._beam_names = self._unpack_beam(data)
             self._prof_pv = self._unpack_prof(data)
             self._ts = self._unpack_ts(data)
-            import pdb; pdb.set_trace()
             self._config = self._unpack_config(data)
         except Exception as e:
             print('Error loading mat file: {0}'.format(e))
@@ -68,6 +67,14 @@ class CorPlotMatScan(object):
     def accelerator(self):
         """Accelerator name"""
         return self._accel
+    
+    @property
+    def prof_pv(self):
+        """PV of YAG or OTR screen"""
+        if self._prof_pv is not None:
+            return list(self._prof_pv.keys())
+        
+        return None
 
     @property
     def ctrl_pv(self):
@@ -162,6 +169,7 @@ class CorPlotMatScan(object):
         """Create a list of dictionaries for all the readback pvs
         Each val and time key is a 2 d array for each data point as each point
         has a number of readings"""
+        import pdb; pdb.set_trace()
         if READ not in self._fields:
             return None
 
@@ -211,7 +219,7 @@ class CorPlotMatScan(object):
         names = prof.dtype.names
         prof_pvs = dict()
         for pv in prof:
-            if isinstance(pv[0][0][0], unicode):  # one sample
+            if len(pv[0][0][0])==1:  # one sample
                 prof_pvs[str(pv[0][0][0])] = pv
             else:  # Multiple samples
                 prof_pvs[str(pv[0][0][0][0])] = pv  
