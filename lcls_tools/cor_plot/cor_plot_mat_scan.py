@@ -27,6 +27,7 @@ class CorPlotMatScan(object):
     """Unpack a correlation plot scan .mat file"""
     def __init__(self, mat_file):
         try:
+            #import pdb; pdb.set_trace()
             data = sio.loadmat(mat_file)['data'][0][0]
             self._file = mat_file
             self._fields = data.dtype.names
@@ -39,6 +40,7 @@ class CorPlotMatScan(object):
             self._beam, self._beam_names = self._unpack_beam(data)
             self._prof_pv = self._unpack_prof(data)
             self._ts = self._unpack_ts(data)
+            import pdb; pdb.set_trace()
             self._config = self._unpack_config(data)
         except Exception as e:
             print('Error loading mat file: {0}'.format(e))
@@ -209,11 +211,11 @@ class CorPlotMatScan(object):
         names = prof.dtype.names
         prof_pvs = dict()
         for pv in prof:
-            #if isinstance(pv[0][0][0], unicode):  # one sample
-            #    prof_pvs[str(pv[0][0][0])] = pv
-            #else:  # Multiple samples
-            #    prof_pvs[str(pv[0][0][0][0])] = pv  
-            prof_pvs[str(pv[0][0][0])] = pv
+            if isinstance(pv[0][0][0], unicode):  # one sample
+                prof_pvs[str(pv[0][0][0])] = pv
+            else:  # Multiple samples
+                prof_pvs[str(pv[0][0][0][0])] = pv  
+
         return prof_pvs
 
     def _unpack_ts(self, data):
