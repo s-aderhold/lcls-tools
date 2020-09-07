@@ -183,7 +183,7 @@ def save_corplot_solenoid_scan(filename, h5group):
                         data_type = name+'_'+key
                         save_data = fit_group.create_dataset(data_type, data=np.array(small_data[key]))
     
-    return
+    return cp_group
 
 
 def save_emit_scan(filename, h5group):

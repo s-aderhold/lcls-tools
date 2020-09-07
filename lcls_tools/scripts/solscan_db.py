@@ -16,11 +16,10 @@ from archiver import *
 from dataset import *
 
 #Correlation plot scan data
-#sol1 = glob.glob('/u1/lcls/matlab/data/2020/2020-06/2020-06-*[21,22]/Cor*SOLN*')
-#sol2 = glob.glob('/u1/lcls/matlab/data/2020/2020-07/2020-07-*[08,09]/Cor*SOLN*')
-#solfiles = sol1 + sol2
-#solfiles  = glob.glob('/mccfs2/u1/lcls/matlab/data/2020/2020-0{6,7}/2020-0{6,7}-{21,22,8,9}/Cor*SOLN*')
-solfiles = glob.glob('/Users/nneveu/Google Drive File Stream/Shared drives/Injector Modeling/measurements/cu_inj/2020-0*/Cor*SOLN*')
+sol1 = glob.glob('/u1/lcls/matlab/data/2020/2020-06/2020-06-*[21,22]/Cor*SOLN*')
+sol2 = glob.glob('/u1/lcls/matlab/data/2020/2020-07/2020-07-*[08,09]/Cor*SOLN*')
+solfiles = sol1 + sol2
+#solfiles = glob.glob('/Users/nneveu/Google Drive File Stream/Shared drives/Injector Modeling/measurements/cu_inj/2020-0*/Cor*SOLN*')
 
 print('Number of SOL scans', len(solfiles))
 # Make h5 file, give data description
@@ -44,8 +43,9 @@ for filename in solfiles:
         #Save beam data and magnet strengths
         file_group = save_corplot_solenoid_scan(filename, cp_h5)
         
+        # Injector PV keys
         # Save pv data given time stamp
-        #save_pvdata_to_h5(pv_list, cp_group, isotime)
+        save_pvdata_to_h5(pv_list, file_group, isotime)
     except:
         print('Unable to save data from:', filename)
 
