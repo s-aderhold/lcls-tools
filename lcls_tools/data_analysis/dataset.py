@@ -9,20 +9,39 @@ FITS = ['Gaussian', 'Asymmetric', 'Super', 'RMS', 'RMS cut peak', 'RMS cut area'
 #    def __init__(self):
 #        try 
 
-LCLS_YAG_MAP = {
+LCLS_DIAGNOSTIC_MAP = {
         'YAG02':'YAGS:IN20:241', 
-        'YAG03':'YAGS:IN20:351', 
+        'YAG03':'YAGS:IN20:351',
+        'YAGS1':'YAGS:IN20:921',
         'YAGS2':'YAGS:IN20:995',
         'OTR1':'OTRS:IN20:541',
         'OTR2':'OTRS:IN20:571',
         'OTR3':'OTRS:IN20:621',
-        }
+        'WS02': 'WIRE:IN20:561',
+       }
+def short_diagnostic_name(pv_name):
+    """Replace YAG or WIRE PV name with short name"""
+    for yag, yag_pv in LCLS_DIAGNOSTIC_MAP.items():
+        if yag_pv in pv_name:
+            yag_name = yag
+            return yag_name
+    print('Did not find short name for this pv:', pv_name)
+    print('Returning original name for this group')
+    return pv_name
+
+
+def get_isotimes(mat_timestamp):
+    '''Get shortened isotime for group name'''
+    pydatetime = datenum_to_datetime(mat_timestamp)
+    isotime    = pydatetime.isoformat()+'-07:00'
+    return isotime, isotime.split('.')[0]
+
 
 
 def check_emitscan_load(filename):
     """Load emit scan data"""
     mes      = MES(filename)
-    #ctrlpv   = mes.name
+    ctrlpv   = mes.name
     quad     = mes.quad_name
     quadvals = mes.quad_vals
     emitx    = mes.emit_x
@@ -65,7 +84,8 @@ def unpack_mat_beam_data(beam_data, category):
 
     """
     data ={} 
-
+    
+    standard_keys = ['XMEAN', 'YMEAN', 'XRMS', 'YRMS', 'CORR', 'SUM']
     #profkeys = ['COORD','PROF','FIT'] 
 
     #if 'profx' in category:
@@ -79,11 +99,14 @@ def unpack_mat_beam_data(beam_data, category):
     #    beam_data = beam_data[0]
     #elif ('xStatStd' in category) or ('yStatStd' in category): #or ('uStatStd' in category):
     #    data_keys = [category] 
-    if 'stats' in category:
-        data_keys = ['XMEAN', 'YMEAN', 'XRMS', 'YRMS', 'CORR', 'SUM']
+    if 'stats' == category:
+        data_keys = standard_keys
         beam_data = beam_data[0]
     elif 'statsStd' in category:
         data_keys = [category]
+    elif 'stats_std' == category:
+        data_keys = standard_keys
+        beam_data = beam_data[0]
     #elif 'method' in category:
     #    data_keys = [category]
     
@@ -102,21 +125,16 @@ def save_corplot_solenoid_scan(filename, h5group):
     assert isinstance(cpms.ctrl_pv, str) 
     assert 'SOLN' in cpms.ctrl_pv
 
-    
-    #import pdb; pdb.set_trace()
-    pydatetime = datenum_to_datetime(cpms.timestamp)
-    isotime    = pydatetime.isoformat()+'-07:00'
-    short_time = isotime.split('.')[0]
+    # Get screen PV name
     if len(cpms.prof_pv) > 1:
         name = cpms.prof_pv[0]
     else:
         name = cpms._prof_pv[cpms.prof_pv[0]][0][0][0] #AHHHH
+ 
+    yag_name   = short_diagnostic_name(diagnostic_pv)
+    isotime, short_time = get_isotimes(cpms.timestamp)
    
-    for yag, yag_pv in LCLS_YAG_MAP.items():
-        if yag_pv in name:
-            yag_name = yag
-            print('YAH',yag_name)
-    
+    # Make file group with screen and time in name
     cp_group   = h5group.create_group('solenoid_scan_'+yag_name+'_'+short_time)
     beam       = cp_group.create_group('beam_data') 
             
@@ -168,21 +186,75 @@ def save_corplot_solenoid_scan(filename, h5group):
     return
 
 
-
 def save_emit_scan(filename, h5group):
     '''Load emittance scan matlab data'''
-    mes      = MES(filename)
-    assert 'Emittance-scan' in mes.mat_file
-    quad     = mes.quad_name
-    quadvals = mes.quad_vals
-    emitx    = mes.emit_x
-    emity    = mes.emit_y
-    try:
-        for key in emitx:
-            xname = key+'_x'
-            yname = key+'_y'
-            h5group.create_dataset(xname, data=emitx[key])
-            h5group.create_dataset(yname, data=emity[key])
-    except:
-        print('Could not save emittance data')
-    return 
+    assert 'Emittance-scan' in filename
+
+    mes           = MES(filename)
+    diagnostic_pv = mes.name
+    yag_name      = short_diagnostic_name(diagnostic_pv)
+    isotime, short_time    = get_isotimes(mes.timestamp)
+
+    # Make file group with screen and time in name
+    emit_group = h5group.create_group('emit_scan_'+yag_name+'_'+short_time)
+    beam       = emit_group.create_group('beam_data') 
+    
+    # Save some default info on top level
+    h5group.attrs['file']         = mes.file
+    h5group.attrs['isotime']      = isotime   
+    h5group.attrs['data_types']   = mes.fields
+    h5group.attrs['ctrl_pv']      = mes.quad_name
+    #Have to get pv unit from EPICS!!!!!!!
+    #h5group.attrs['ctrl_pv_unit'] = mes.control_dict[0]['egu']
+    h5group.attrs['matlab_timestamp'] = mes.timestamp
+
+    # Saving emittance data first
+    beam_emit = beam.create_group('emittance')
+    beam_emit.attrs['emittance_unit'] = 'micron'
+    for key in mes.emit_x:
+        fit = beam_emit.create_group(key)
+        fit.create_dataset('emit_x', data=mes.emit_x[key])
+        fit.create_dataset('emit_y', data=mes.emit_y[key])
+
+    # Saving beam profiles
+    beam_sizes = beam.create_group('beam_sizes')
+    # Loop through measurment steps
+    for i in range(0, mes.iterations):
+        step_group = beam_sizes.create_group('step'+str(i))
+        # Save ctrl pv and value, get beam data
+        step_group.attrs[mes.quad_name] = mes.quad_vals[i]
+        #step_group.attrs[mes.ctrl_pv+'.EGU'] = mes.control_dict[0]['egu'] 
+        step_data  = mes.beam[i]
+        skeys = step_data[0].keys()
+        # Fitting functions used to calc beam sizes
+        for ifit, fit in enumerate(FITS):
+            # Create groups to save beam size data
+            fit_group  = step_group.create_group(fit) 
+            fit_group.attrs['unit'] = 'um'
+            if 'Gaussian' in fit:
+                # Looping over samples, i.e. # magnet settings
+                raw_group    = step_group.create_group('raw_data')
+                raw_group.attrs['unit'] = 'um'
+                # 0 index = COORD
+                # 1 index = PROF
+                if 'profx' in skeys:
+                    xdata = step_data[ifit]['profx']
+                    raw_group.create_dataset('XCOORD', data=xdata[0])
+                    raw_group.create_dataset('XPROF', data=xdata[1])
+                elif 'profy' in skeys:
+                    ydata = step_data[ifit]['profy']
+                    raw_group.create_dataset('YCOORD', data=ydata[0])
+                    raw_group.create_dataset('YPROF', data=ydata[1])
+            
+            # Different types of beam data
+            for name in ['stats', 'stats_std']:
+                # Unpacking a stats data
+                small_data = unpack_mat_beam_data(step_data[ifit][name], name)
+                for key in small_data:
+                    if name=='stats_std':
+                        name = 'statsStd'
+                    data_type = name+'_'+key
+                    save_data = fit_group.create_dataset(data_type, data=np.array(small_data[key]))
+    return
+
+
