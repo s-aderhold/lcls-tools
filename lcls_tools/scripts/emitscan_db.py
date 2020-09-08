@@ -15,8 +15,10 @@ from epics import PV
 from archiver import * 
 from dataset import *
 
-#Correlation plot scan data
-emitfiles = glob.glob('/Users/nneveu/Google Drive File Stream/Shared drives/Injector Modeling/measurements/cu_inj/2020-0*/Emit*scan*IN20*')
+#Emit scan data
+emit1 = glob.glob('/u1/lcls/matlab/data/2020/2020-06/2020-06-*[21,22]/Emit*scan*')
+emit2 = glob.glob('/u1/lcls/matlab/data/2020/2020-07/2020-07-*[08,09]/Emit*scan*')
+emitfiles = emit1 + emit2
 print('Number of emit scans', len(emitfiles))
 
 # Make h5 file, give data description
