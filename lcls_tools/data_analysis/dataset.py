@@ -18,6 +18,9 @@ LCLS_DIAGNOSTIC_MAP = {
         'OTR2':'OTRS:IN20:571',
         'OTR3':'OTRS:IN20:621',
         'WS02': 'WIRE:IN20:561',
+	'WS12':'WIRE:LI21:293',
+	'YAGPSI':'YAGS:LTUH:743',
+	'WS32':'WIRE:LTUH:735',
        }
 def short_diagnostic_name(pv_name):
     """Replace YAG or WIRE PV name with short name"""
@@ -203,9 +206,7 @@ def save_emit_scan(filename, h5group):
     h5group.attrs['file']         = mes.file
     h5group.attrs['isotime']      = isotime   
     h5group.attrs['data_types']   = mes.fields
-    h5group.attrs['ctrl_pv']      = mes.quad_name
-    #Have to get pv unit from EPICS!!!!!!!
-    #h5group.attrs['ctrl_pv_unit'] = mes.control_dict[0]['egu']
+    h5group.attrs['ctrl_pv']      = mes.quad_name+':BCTRL'
     h5group.attrs['matlab_timestamp'] = mes.timestamp
 
     # Saving emittance data first
@@ -222,7 +223,7 @@ def save_emit_scan(filename, h5group):
     for i in range(0, mes.iterations):
         step_group = beam_sizes.create_group('step'+str(i))
         # Save ctrl pv and value, get beam data
-        step_group.attrs[mes.quad_name] = mes.quad_vals[i]
+        step_group.attrs[mes.quad_name+':BCTRL'] = mes.quad_vals[i]
         #step_group.attrs[mes.ctrl_pv+'.EGU'] = mes.control_dict[0]['egu'] 
         step_data  = mes.beam[i]
         skeys = step_data[0].keys()
@@ -255,6 +256,6 @@ def save_emit_scan(filename, h5group):
                         name = 'statsStd'
                     data_type = name+'_'+key
                     save_data = fit_group.create_dataset(data_type, data=np.array(small_data[key]))
-    return
+    return mes.quad_name, emit_group
 
 

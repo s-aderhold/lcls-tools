@@ -40,11 +40,19 @@ for filename in emitfiles:
         isotime    = pydatetime.isoformat()+'-07:00'
         
         # Save emittance data and magnet strengths
-        file_group = save_emit_scan(filename, emit_h5)
+        magpv, file_group = save_emit_scan(filename, emit_h5)
         # Save pv data given time stamp
-        #save_pvdata_to_h5(pv_list, file_group, isotime)
-    
-    
+        save_pvdata_to_h5(pv_list, file_group, isotime)
+
+        # Get pv unit for magpv
+        pvname = magpv+':BCTRL'
+        pv     = PV(pvname)
+        pvunit = pv.get_ctrlvars()['units']
+
+        step = file_group['beam_data']['beam_sizes']
+        for group in step:
+            step[group].attrs[pvname+'.EGU'] = pvunit
+	
     except:
         print('could not load this file', filename)
     #    pass
