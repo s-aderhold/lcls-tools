@@ -203,11 +203,11 @@ def save_emit_scan(filename, h5group):
     beam       = emit_group.create_group('beam_data') 
     
     # Save some default info on top level
-    h5group.attrs['file']         = mes.file
-    h5group.attrs['isotime']      = isotime   
-    h5group.attrs['data_types']   = mes.fields
-    h5group.attrs['ctrl_pv']      = mes.quad_name+':BCTRL'
-    h5group.attrs['matlab_timestamp'] = mes.timestamp
+    emit_group.attrs['file']         = mes.file
+    emit_group.attrs['isotime']      = isotime   
+    emit_group.attrs['data_types']   = mes.fields
+    emit_group.attrs['ctrl_pv']      = mes.quad_name+':BCTRL'
+    emit_group.attrs['matlab_timestamp'] = mes.timestamp
 
     # Saving emittance data first
     beam_emit = beam.create_group('emittance')
