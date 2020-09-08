@@ -37,7 +37,7 @@ ORBIT_STD = 'orbitstd'
 TWISS_PV = 'twissPV'
 
 # Disclaimer:  It is up to user to verify what they are getting makes
-# sense in the context of thes scan types
+# sense in the context of these scan types
 
 class MatEmitScan(object):
     def __init__(self, mat_file):
@@ -72,7 +72,7 @@ class MatEmitScan(object):
         return self._fields
 
     @property
-    def mat_file(self):
+    def file(self):
         """Mat file loaded"""
         return self._file
 
@@ -266,9 +266,11 @@ class MatEmitScan(object):
                 # Go through metadata provided
                 for i3, name in enumerate(names):
                     iter_fit[name] = fit[i3]
+                
                 # Throw stats in there
                 if beam_std is not None:
-                    iter_fit['stats_std'] = beam_std[i1][i2][10]
+                    #Last entry????? FIX ME!!!!
+                    iter_fit['stats_std'] = beam_std[i1][i2][-1]
                 else:
                     iter_fit['stats_std'] = []
                 fit_list.append(iter_fit)
@@ -291,10 +293,11 @@ class MatEmitScan(object):
             temp2 = dict()
             for i, name in enumerate(names):
                 if name != UNITS:
-                    if isinstance(val[0][i][0], unicode):
-                        temp2[name] = str(val[0][i][0])
-                    else:
-                        temp2[name] = val[0][i][0] 
+                    #if isinstance(val[0][i][0], unicode):
+                    #    temp2[name] = str(val[0][i][0])
+                    #else:
+                    #    temp2[name] = val[0][i][0]
+                    temp2[name] = val[0][i][0]
             temp1.append(temp2)
 
         return temp1
