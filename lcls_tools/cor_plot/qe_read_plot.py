@@ -11,8 +11,11 @@ def extract_QE_data(file):
     file - a .mat file with QE corr plot data
     output: 
     d - a dictionary with the 3-dimensional QE information
+    please note - x and y are arbitrary names, the first dimention is the same as the 
+    direction noted in the corr plot title, the second is the orthogonal transverse direction. 
+    
+    example, if it is a horizontal scan, the "x" direction is the horizontal direction on the cathode.
     '''
-    d = {}
     data = sio.loadmat(file)['data'][0][0]
     print(file)
 
